@@ -1,79 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine - Gender Prediction</title>
-    <link rel="stylesheet" href="stylesheet.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teachable Machine - Gender Prediction</title>
+  <link rel="stylesheet" href="stylesheet.css">
 </head>
 <body>
 <div id="container">
-    <h1>Teachable Machine Image Model</h1>
-    <button type="button" onclick="init()">Start</button>
-    <div id="webcam-container"></div>
-    <div id="label-container"></div>
+  <h1>Teachable Machine Image Model</h1>
+  <button type="button" onclick="init()">Start</button>
+  <div id="webcam-container"></div>
+  <div id="label-container"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 <script>
-    const URL = "./my_model/";
+  const URL = "./my_model/";
 
-    let model, webcam, labelContainer, maxPredictions;
+  let model, webcam, labelContainer, maxPredictions;
 
-    async function init() {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
+  async function init() {
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
 
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
+    model = await tmImage.load(modelURL, metadataURL);
+    maxPredictions = model.getTotalClasses();
 
-        const flip = true;
-        webcam = new tmImage.Webcam(200, 200, flip);
-        await webcam.setup();
-        await webcam.play();
-        window.requestAnimationFrame(loop);
+    const flip = true;
+    webcam = new tmImage.Webcam(200, 200, flip);
+    await webcam.setup();
+    await webcam.play();
+    window.requestAnimationFrame(loop);
 
-        document.getElementById("webcam-container").appendChild(webcam.canvas);
-        labelContainer = document.getElementById("label-container");
-        for (let i = 0; i < maxPredictions; i++) {
-            labelContainer.appendChild(document.createElement("div"));
-        }
+    document.getElementById("webcam-container").appendChild(webcam.canvas);
+    labelContainer = document.getElementById("label-container");
+    for (let i = 0; i < maxPredictions; i++) {
+      labelContainer.appendChild(document.createElement("div"));
+    }
+  }
+
+  async function loop() {
+    webcam.update();
+    await predict();
+    window.requestAnimationFrame(loop);
+  }
+
+  async function predict() {
+    const prediction = await model.predict(webcam.canvas);
+    let manProb = 0;
+    let vrouwProb = 0;
+
+    for (let i = 0; i < maxPredictions; i++) {
+      const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+      labelContainer.childNodes[i].innerHTML = classPrediction;
+
+      if (prediction[i].className.toLowerCase() === "man") {
+        manProb = prediction[i].probability * 100; // Convert to percentage
+      } else if (prediction[i].className.toLowerCase() === "vrouw") {
+        vrouwProb = prediction[i].probability * 100; // Convert to percentage
+      }
     }
 
-    async function loop() {
-        webcam.update();
-        await predict();
-        window.requestAnimationFrame(loop);
+    // Change background based on prediction rules
+    if (manProb === 69 || vrouwProb === 69) {
+      document.body.style.backgroundImage = "url('images/nice.jpg')";
+    } else if (manProb > 85 && vrouwProb < 15) {
+      document.body.style.backgroundImage = "url('images/man.jpg')";
+    } else if (manProb < 15 && vrouwProb > 85) {
+      document.body.style.backgroundImage = "url('images/woman.png')";
+    } else {
+      document.body.style.backgroundImage = "url('images/doubt.jpg')";
     }
-
-    async function predict() {
-        const prediction = await model.predict(webcam.canvas);
-        let manProb = 0;
-        let vrouwProb = 0;
-
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-
-            if (prediction[i].className.toLowerCase() === "man") {
-                manProb = prediction[i].probability * 100; // Convert to percentage
-            } else if (prediction[i].className.toLowerCase() === "vrouw") {
-                vrouwProb = prediction[i].probability * 100; // Convert to percentage
-            }
-        }
-
-        // Change background based on prediction rules
-        if (manProb === 69 || vrouwProb === 69) {
-            document.body.style.backgroundImage = "url('images/nice.jpg')";
-        } else if (manProb > 85 && vrouwProb < 15) {
-            document.body.style.backgroundImage = "url('images/man.jpg')";
-        } else if (manProb < 15 && vrouwProb > 85) {
-            document.body.style.backgroundImage = "url('images/woman.png')";
-        } else {
-            document.body.style.backgroundImage = "url('images/doubt.jpg')";
-        }
-    }
+  }
 </script>
 </body>
 </html>
